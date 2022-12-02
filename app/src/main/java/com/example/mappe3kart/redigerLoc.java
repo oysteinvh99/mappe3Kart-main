@@ -36,6 +36,7 @@ public class redigerLoc extends AppCompatActivity {
         hentEkstra();
 
     }
+    //Henter verdier fra intent
     public void hentEkstra(){
         String breddegrad=getIntent().getStringExtra("Breddegrad");
         String lengdegrad=getIntent().getStringExtra("Lengdegrad");
@@ -49,6 +50,7 @@ public class redigerLoc extends AppCompatActivity {
 
 
     }
+    //Lagrer endringer
     public void LagreEndring(View view){
         String sjekker=Beskrivelse.getText().toString();
         if (sjekker.equals("")){
@@ -64,6 +66,8 @@ public class redigerLoc extends AppCompatActivity {
 
     }
 
+
+    //Registrerer endringer i database
     private class EndreLoc extends AsyncTask<informasjon, Void, String> {
         JSONObject jsonObject;
 

@@ -10,18 +10,16 @@ import android.graphics.Typeface;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -30,11 +28,9 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.example.mappe3kart.databinding.ActivityMapsBinding;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -42,18 +38,15 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 
-public class MapsActivity extends FragmentActivity implements     GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, LocationListener, OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
     private GoogleMap mMap;
     private ActivityMapsBinding binding;
     private GoogleApiClient mGoogleApiClient;
     List<informasjon>markerList=new ArrayList<>();
-    Context mContext;
-    int i=0;
     String holder="";
-   boolean lås=false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,11 +60,66 @@ public class MapsActivity extends FragmentActivity implements     GoogleApiClien
         View view = mapFragment.getView();
         view.setClickable(true);
         mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
     }
+
+    //Setter opp kart
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        mMap = googleMap;
+        getJSON infList=new getJSON();
+        infList.execute(new
+                String[]{"http://data1500.cs.oslomet.no/~s354354/jsout.php"});
+
+
+        //Registrerer hvis kart blir trykket på
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker arg0) {
+                    Intent intent = new Intent(MapsActivity.this, rediger.class);
+                    int id = (int) arg0.getTag();
+                    intent.putExtra("Id", id);
+                    // Starting the  Activity
+                    startActivity(intent);
+                    onBackPressed();
+                    Log.d("mGoogleMap1", "Activity_Calling");
+
+            }
+        });
+        //Lager infoboks for marker
+        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+
+            @Override
+            public View getInfoWindow(Marker arg0) {
+                return null;
+            }
+
+            @Override
+            public View getInfoContents(Marker marker) {
+                LinearLayout info = new LinearLayout(MapsActivity.this);
+                info.setOrientation(LinearLayout.VERTICAL);
+                TextView title = new TextView(MapsActivity.this);
+                title.setTextColor(Color.BLACK);
+                title.setGravity(Gravity.CENTER);
+                title.setTypeface(null, Typeface.BOLD);
+                title.setText(marker.getTitle());
+                TextView snippet = new TextView(MapsActivity.this);
+                snippet.setTextColor(Color.GRAY);
+                snippet.setText(marker.getSnippet());
+                info.addView(title);
+                info.addView(snippet);
+                return info;
+            }
+        });
+        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng point) {
+                new GetLocationTask(point.latitude,point.longitude).execute();
+            }
+        });
+    }
+    //Henter ut attraksjoner og legger de i en markør.
     private class getJSON extends AsyncTask<String, Void, List<informasjon>> {
         JSONObject jsonObject;
 
@@ -115,19 +163,19 @@ public class MapsActivity extends FragmentActivity implements     GoogleApiClien
                             ListeInf.add(nyInfo);
                         }
                         markerList=ListeInf;
-                        lås=true;
+
                         return ListeInf;
                     } catch (JSONException e) {
                         e.printStackTrace();
-                        lås=true;
+
                     }
                 } catch (Exception e) {
-                    lås=true;
+
                     return null;
 
                 }
             }
-            lås=true;
+
             return ListeInf;
         }
 
@@ -136,94 +184,24 @@ public class MapsActivity extends FragmentActivity implements     GoogleApiClien
             for (informasjon inf : markerList) {
                 mMap.addMarker(new MarkerOptions().position(new LatLng(inf.getBreddegrad(),inf.getLengdegrad())).title("Beskrivlese").snippet(inf.getBeskrivelse()).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))).setTag(inf.getId());
             }
+            //Sette kartposisjon til sist brukte.
+            if (getIntent().hasExtra("Bredde")) {
+                CameraUpdate point = CameraUpdateFactory.newLatLng(new LatLng(Double.parseDouble(getIntent().getStringExtra(("Bredde"))), Double.parseDouble(getIntent().getStringExtra(("Lengde")))));
+                mMap.moveCamera(point);
+            }
+            else {
+
+                CameraUpdate point = CameraUpdateFactory.newLatLng(new LatLng(markerList.get(markerList.size()-1).Breddegrad,markerList.get(markerList.size()-1).Lengdegrad));
+                mMap.moveCamera(point);
+
+            }
 
 
 
 
         }
     }
-    @Override
-    public void onConnected(Bundle bundle) {
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-
-    }
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        lås=false;
-        mMap = googleMap;
-        getJSON infList=new getJSON();
-        infList.execute(new
-                String[]{"http://data1500.cs.oslomet.no/~s354354/jsout.php"});
-        lås=true;
-        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-
-            @Override
-            public void onInfoWindowClick(Marker arg0) {
-                if (lås) {
-                    Intent intent = new Intent(MapsActivity.this, rediger.class);
-                    int id = (int) arg0.getTag();
-                    intent.putExtra("Id", id);
-
-                    // Starting the  Activity
-                    startActivity(intent);
-                    onBackPressed();
-                    Log.d("mGoogleMap1", "Activity_Calling");
-                }
-            }
-        });
-
-        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
-
-            @Override
-            public View getInfoWindow(Marker arg0) {
-                return null;
-            }
-
-            @Override
-            public View getInfoContents(Marker marker) {
-
-                LinearLayout info = new LinearLayout(MapsActivity.this);
-                info.setOrientation(LinearLayout.VERTICAL);
-
-                TextView title = new TextView(MapsActivity.this);
-                title.setTextColor(Color.BLACK);
-                title.setGravity(Gravity.CENTER);
-                title.setTypeface(null, Typeface.BOLD);
-                title.setText(marker.getTitle());
-
-                TextView snippet = new TextView(MapsActivity.this);
-                snippet.setTextColor(Color.GRAY);
-                snippet.setText(marker.getSnippet());
-                info.addView(title);
-                info.addView(snippet);
-
-
-                return info;
-            }
-        });
-        mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-            @Override
-            public void onMapClick(LatLng point) {
-                new GetLocationTask(point.latitude,point.longitude).execute();
-            }
-        });
-
-
-    }
+    //Finner adresse med google maps geocoder
     private class GetLocationTask extends AsyncTask<Void, Void, LatLng> {
         JSONObject jsonObject;
         double bredde;
@@ -259,7 +237,6 @@ public class MapsActivity extends FragmentActivity implements     GoogleApiClien
                 JSONArray liste= ((JSONArray)
                         jsonObject.get("results")).getJSONObject(0).getJSONArray("types");
                 holder= (String) liste.get(0);
-                lås=true;
                 LatLng latLng=new LatLng(bredde,lengde);
                 return latLng;
             }

@@ -51,6 +51,7 @@ public class rediger extends AppCompatActivity {
 
 
     }
+    //Lagrer verdier og sender over til redigerLoc
     public void EndreLokasjon(View view){
         Intent intent=new Intent(rediger.this,redigerLoc.class);
         intent.putExtra("Gateadresse",Adresse.getText());
@@ -62,17 +63,16 @@ public class rediger extends AppCompatActivity {
         finish();
 
     }
+    //Henter en rad fra database
     private class getJSON extends AsyncTask<Integer, Void, informasjon> {
         JSONObject jsonObject;
 
         @Override
         protected informasjon doInBackground(Integer... id) {
-            String retur = "";
             String s = "";
             String output = "";
             int iden=id[0];
             informasjon nyInfo = new informasjon();
-
                 try {
                     URL urlen = new URL("http://data1500.cs.oslomet.no/~s354354/jsoncha.php/?id="+iden);
                     HttpURLConnection conn = (HttpURLConnection)
@@ -120,15 +120,13 @@ public class rediger extends AppCompatActivity {
 
         }
     }
+    //Sletter fra database
     private class slettLoc extends AsyncTask<Integer, Void, String> {
         JSONObject jsonObject;
 
         @Override
         protected String doInBackground(Integer...id) {
             int iden=id[0];
-            String retur = "";
-            String s = "";
-            String output = "";
             try {
                 URL urlen = new URL("http://data1500.cs.oslomet.no/~s354354/jsondel.php/?id="+iden);
                 HttpURLConnection conn = (HttpURLConnection)
@@ -165,6 +163,8 @@ public class rediger extends AppCompatActivity {
     public void onBackPressed() {
         super.onBackPressed();
         Intent intent=new Intent(rediger.this,MapsActivity.class);
+        intent.putExtra("Bredde",Breddegraden.getText());
+        intent.putExtra("Lengde",Lengdegraden.getText());
         startActivity(intent);
         finish();
 

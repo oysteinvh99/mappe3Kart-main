@@ -52,12 +52,12 @@ public class leggTil extends AppCompatActivity {
 
 
     }
+    //Legger til ny attraksjon
     public void leggTil(View view){
         String sjekker=Beskrivelse.getText().toString();
+        //Sjekker om beskrivelse er fylt ut.
         if (sjekker.equals("")){
             Toast.makeText(leggTil.this,"Må ha en beskrivelse", Toast.LENGTH_SHORT).show();
-
-
         }
         else {
             informasjon info = new informasjon(Beskrivelse.getText().toString(), Adresse.getText().toString(), breddegrad, lengdegrad);
@@ -69,7 +69,7 @@ public class leggTil extends AppCompatActivity {
 
 
 
-
+//Henter ut adrassen ved hjelp av google geocoder
     private class GetLocationTask extends AsyncTask<Void, Void, String> {
         JSONObject jsonObject;
         double bredde;
@@ -123,7 +123,7 @@ public class leggTil extends AppCompatActivity {
         }
     }
 
-
+//Legg inn ny attraksjon i tabell.
     private class leggInn extends AsyncTask<informasjon, Void, String> {
         JSONObject jsonObject;
 
@@ -174,6 +174,8 @@ public class leggTil extends AppCompatActivity {
     public void onBackPressed() {
         super.onBackPressed();
         Intent intent=new Intent(leggTil.this,MapsActivity.class);
+        intent.putExtra("Bredde",breddegrad);
+        intent.putExtra("Lengde",lengdegrad);
         startActivity(intent);
         finish();
 
